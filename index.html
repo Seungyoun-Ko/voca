@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>영어 단어 마스터 - 초등학생 영어 단어 학습</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 시작 화면 -->
+    <div id="start-screen" class="screen active">
+        <div class="start-container">
+            <h1 class="app-title">영어 단어 마스터</h1>
+            <p class="app-subtitle">30일 완성 영어 단어 학습 프로그램</p>
+
+            <div class="option-group">
+                <label class="option-label">단계 선택</label>
+                <div class="level-buttons">
+                    <button class="level-btn selected" data-level="elementary">
+                        <span class="level-icon">🌱</span>
+                        <span class="level-name">초급</span>
+                        <span class="level-desc">Elementary</span>
+                    </button>
+                    <button class="level-btn" data-level="intermediate">
+                        <span class="level-icon">🌿</span>
+                        <span class="level-name">중급</span>
+                        <span class="level-desc">Intermediate</span>
+                    </button>
+                    <button class="level-btn" data-level="advanced">
+                        <span class="level-icon">🌳</span>
+                        <span class="level-name">고급</span>
+                        <span class="level-desc">Advanced</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">세트 크기 (한 번에 외울 단어 수)</label>
+                <div class="set-buttons">
+                    <button class="set-btn" data-size="10">10개</button>
+                    <button class="set-btn selected" data-size="20">20개</button>
+                    <button class="set-btn" data-size="30">30개</button>
+                    <button class="set-btn" data-size="40">40개</button>
+                    <button class="set-btn" data-size="50">50개</button>
+                </div>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">세트 선택</label>
+                <div id="set-selector" class="set-selector">
+                    <!-- 동적 생성 -->
+                </div>
+            </div>
+
+            <div class="progress-summary" id="progress-summary">
+                <!-- 동적 생성 -->
+            </div>
+
+            <button id="start-btn" class="start-btn">학습 시작!</button>
+            <button id="reset-btn" class="reset-btn">학습 기록 초기화</button>
+        </div>
+    </div>
+
+    <!-- 학습 화면 -->
+    <div id="study-screen" class="screen">
+        <div class="study-header">
+            <button id="back-btn" class="back-btn">← 돌아가기</button>
+            <div class="study-progress">
+                <span id="current-index">1</span> / <span id="total-count">30</span>
+                <span class="memorized-count">(외운 단어: <span id="memorized-count">0</span>개)</span>
+            </div>
+        </div>
+
+        <div class="progress-bar-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+
+        <div class="card-area">
+            <div class="swipe-hint hint-up">⬆ 위로 드래그: 외웠어요!</div>
+            <div class="swipe-hint hint-left">⬅ 다음 단어</div>
+            <div class="swipe-hint hint-right">이전 단어 ➡</div>
+
+            <div id="word-card" class="word-card">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <div class="word-text" id="word-text">apple</div>
+                        <div class="tap-hint">탭하여 뜻 보기</div>
+                    </div>
+                    <div class="card-back">
+                        <div class="word-text-small" id="word-text-back">apple</div>
+                        <div class="pos-badge" id="pos-badge">명사</div>
+                        <div class="meaning-text" id="meaning-text">사과</div>
+                        <div class="homophones" id="homophones-section">
+                            <div class="homophones-label">동음이의어</div>
+                            <div class="homophones-list" id="homophones-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="keyboard-hints">
+            <span>키보드: ← 이전 | → 다음 | Space 뜻 보기 | ↑ 외웠어요</span>
+        </div>
+    </div>
+
+    <!-- 완료 화면 -->
+    <div id="complete-screen" class="screen">
+        <div class="complete-container">
+            <div class="complete-icon">🎉</div>
+            <h2>세트 학습 완료!</h2>
+            <p id="complete-message"></p>
+            <div class="complete-stats">
+                <div class="stat">
+                    <span class="stat-number" id="stat-memorized">0</span>
+                    <span class="stat-label">외운 단어</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number" id="stat-remaining">0</span>
+                    <span class="stat-label">남은 단어</span>
+                </div>
+            </div>
+            <button id="retry-btn" class="start-btn">남은 단어 다시 학습</button>
+            <button id="home-btn" class="reset-btn">처음으로</button>
+        </div>
+    </div>
+
+    <script src="words.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
