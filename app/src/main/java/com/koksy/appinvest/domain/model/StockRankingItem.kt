@@ -8,5 +8,7 @@ data class StockRankingItem(
     val price: String,
     val changeRate: Double,
     val tradingValue: String,
+    val metricLabel: String = "거래대금",
+    val metricValue: String = "",
     val themeTags: List<String>,
 )

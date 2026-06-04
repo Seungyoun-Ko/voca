@@ -13,6 +13,7 @@ fun RankingRoute() {
         factory = RankingViewModel.provideFactory(
             observeStockRankingsUseCase = appContainer.observeStockRankingsUseCase,
             observeThemeRankingsUseCase = appContainer.observeThemeRankingsUseCase,
+            observeMarketScannerHighlightsUseCase = appContainer.observeMarketScannerHighlightsUseCase,
         ),
     )
     val uiState = viewModel.uiState.collectAsStateWithLifecycle()

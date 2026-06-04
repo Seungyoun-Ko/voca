@@ -14,6 +14,7 @@ import com.koksy.appinvest.domain.usecase.DeleteDashboardWidgetUseCase
 import com.koksy.appinvest.domain.usecase.InitializeDashboardWidgetsUseCase
 import com.koksy.appinvest.domain.usecase.MoveDashboardWidgetUseCase
 import com.koksy.appinvest.domain.usecase.ObserveDashboardWidgetsUseCase
+import com.koksy.appinvest.domain.usecase.ObserveMarketScannerHighlightsUseCase
 import com.koksy.appinvest.domain.usecase.ObserveMetricComparisonUseCase
 import com.koksy.appinvest.domain.usecase.ObserveStockDetailUseCase
 import com.koksy.appinvest.domain.usecase.ObserveStockRankingsUseCase
@@ -40,6 +41,7 @@ class AppContainer(context: Context) {
 
     val observeStockRankingsUseCase = ObserveStockRankingsUseCase(rankingRepository)
     val observeThemeRankingsUseCase = ObserveThemeRankingsUseCase(rankingRepository)
+    val observeMarketScannerHighlightsUseCase = ObserveMarketScannerHighlightsUseCase(rankingRepository)
 
     val searchStocksUseCase = SearchStocksUseCase(searchRepository)
     val observeStockDetailUseCase = ObserveStockDetailUseCase(searchRepository)

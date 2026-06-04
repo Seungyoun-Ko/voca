@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,8 +27,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.koksy.appinvest.domain.model.MarketScannerHighlight
 import com.koksy.appinvest.domain.model.RankingCategory
 import com.koksy.appinvest.domain.model.StockRankingItem
 import com.koksy.appinvest.domain.model.ThemeRankingItem
@@ -67,6 +70,12 @@ fun RankingScreen(
             }
 
             if (uiState.selectedCategory == RankingCategory.THEMES) {
+                item {
+                    SectionTitle(
+                        title = "테마 랭킹",
+                        subtitle = "모멘텀 점수 기준",
+                    )
+                }
                 items(
                     items = uiState.themeRankings,
                     key = { item -> item.name },
@@ -74,6 +83,12 @@ fun RankingScreen(
                     ThemeRankingRow(item = item)
                 }
             } else {
+                item {
+                    SectionTitle(
+                        title = uiState.selectedCategory.label,
+                        subtitle = uiState.selectedCategory.description,
+                    )
+                }
                 items(
                     items = uiState.stockRankings,
                     key = { item -> "${item.symbol}-${item.rank}" },
@@ -85,6 +100,7 @@ fun RankingScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun RankingHeader(
     uiState: RankingUiState,
@@ -109,9 +125,16 @@ private fun RankingHeader(
             )
         }
 
-        Row(
+        MarketScannerOverview(
+            highlights = uiState.scannerHighlights,
+            selectedCategory = uiState.selectedCategory,
+            onCategorySelected = onCategorySelected,
+        )
+
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             uiState.categories.forEach { category ->
                 FilterChip(
@@ -126,9 +149,148 @@ private fun RankingHeader(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
+private fun MarketScannerOverview(
+    highlights: List<MarketScannerHighlight>,
+    selectedCategory: RankingCategory,
+    onCategorySelected: (RankingCategory) -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "시장 스캐너",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = "${highlights.size}개 관찰축",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            highlights.forEach { highlight ->
+                ScannerHighlightCard(
+                    highlight = highlight,
+                    selected = selectedCategory == highlight.category,
+                    onClick = { onCategorySelected(highlight.category) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScannerHighlightCard(
+    highlight: MarketScannerHighlight,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier
+            .width(166.dp)
+            .height(108.dp),
+        shape = RoundedCornerShape(8.dp),
+        color = if (selected) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant
+        },
+        tonalElevation = 1.dp,
+        onClick = onClick,
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = highlight.category.label,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (selected) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                MiniChangeRateText(changeRate = highlight.changeRate)
+            }
+            Text(
+                text = highlight.symbol,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = if (selected) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = highlight.name,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = highlight.metricLabel,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = highlight.metricValue,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (selected) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.End,
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
 private fun StockRankingRow(
     item: StockRankingItem,
 ) {
+    val metricValue = item.metricValue.ifBlank { item.tradingValue }
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -184,13 +346,37 @@ private fun StockRankingRow(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Top,
             ) {
-                Text(
-                    text = "거래대금 ${item.tradingValue}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Column(
+                    modifier = Modifier
+                        .widthIn(min = 96.dp)
+                        .padding(end = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    Text(
+                        text = item.metricLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = metricValue,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (item.metricLabel != "거래대금") {
+                        Text(
+                            text = "거래대금 ${item.tradingValue}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
                 FlowRow(
                     modifier = Modifier.weight(1f),
                     horizontalArrangement = Arrangement.spacedBy(
@@ -205,6 +391,33 @@ private fun StockRankingRow(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SectionTitle(
+    title: String,
+    subtitle: String,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            text = subtitle,
+            modifier = Modifier.padding(start = 10.dp),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.End,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -292,6 +505,20 @@ private fun RankBadge(rank: Int) {
             fontWeight = FontWeight.SemiBold,
         )
     }
+}
+
+@Composable
+private fun MiniChangeRateText(changeRate: Double) {
+    val color = if (changeRate >= 0) Color(0xFF0F8B5F) else Color(0xFFC24135)
+    val sign = if (changeRate >= 0) "+" else "-"
+    Text(
+        text = "$sign${String.format("%.1f", changeRate.absoluteValue)}%",
+        style = MaterialTheme.typography.labelSmall,
+        color = color,
+        fontWeight = FontWeight.SemiBold,
+        textAlign = TextAlign.End,
+        maxLines = 1,
+    )
 }
 
 @Composable

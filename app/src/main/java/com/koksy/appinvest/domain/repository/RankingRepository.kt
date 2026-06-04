@@ -1,5 +1,6 @@
 package com.koksy.appinvest.domain.repository
 
+import com.koksy.appinvest.domain.model.MarketScannerHighlight
 import com.koksy.appinvest.domain.model.RankingCategory
 import com.koksy.appinvest.domain.model.StockRankingItem
 import com.koksy.appinvest.domain.model.ThemeRankingItem
@@ -9,4 +10,6 @@ interface RankingRepository {
     fun observeStockRankings(category: RankingCategory): Flow<List<StockRankingItem>>
 
     fun observeThemeRankings(): Flow<List<ThemeRankingItem>>
+
+    fun observeMarketScannerHighlights(): Flow<List<MarketScannerHighlight>>
 }
