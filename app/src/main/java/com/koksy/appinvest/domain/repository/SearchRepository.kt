@@ -1,0 +1,11 @@
+package com.koksy.appinvest.domain.repository
+
+import com.koksy.appinvest.domain.model.StockDetail
+import com.koksy.appinvest.domain.model.StockSearchResult
+import kotlinx.coroutines.flow.Flow
+
+interface SearchRepository {
+    fun searchStocks(query: String): Flow<List<StockSearchResult>>
+
+    fun observeStockDetail(symbol: String): Flow<StockDetail?>
+}
