@@ -8,16 +8,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -26,15 +29,21 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.koksy.appinvest.R
+import com.koksy.appinvest.domain.model.ComparisonMetricGroup
 import com.koksy.appinvest.domain.model.FinancialMetric
+import com.koksy.appinvest.domain.model.MetricComparisonRow
+import com.koksy.appinvest.domain.model.MetricComparisonSet
+import com.koksy.appinvest.domain.model.MetricComparisonValue
 import com.koksy.appinvest.domain.model.PricePoint
 import com.koksy.appinvest.domain.model.StockDetail
 import com.koksy.appinvest.domain.model.StockSearchResult
@@ -46,6 +55,7 @@ fun SearchScreen(
     uiState: SearchUiState,
     onQueryChanged: (String) -> Unit,
     onSymbolSelected: (String) -> Unit,
+    onComparisonGroupSelected: (ComparisonMetricGroup) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -78,6 +88,18 @@ fun SearchScreen(
             uiState.selectedDetail?.let { detail ->
                 item {
                     StockDetailPanel(detail = detail)
+                }
+            }
+
+            uiState.metricComparison?.let { comparison ->
+                item {
+                    MetricComparisonPanel(
+                        selectedSymbol = uiState.selectedSymbol,
+                        selectedGroup = uiState.selectedComparisonGroup,
+                        groups = uiState.comparisonGroups,
+                        comparison = comparison,
+                        onGroupSelected = onComparisonGroupSelected,
+                    )
                 }
             }
 
@@ -143,6 +165,273 @@ private fun SearchHeader(
             },
         )
     }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MetricComparisonPanel(
+    selectedSymbol: String,
+    selectedGroup: ComparisonMetricGroup,
+    groups: List<ComparisonMetricGroup>,
+    comparison: MetricComparisonSet,
+    onGroupSelected: (ComparisonMetricGroup) -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                ) {
+                    Text(
+                        text = "동종 기업 비교",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = comparison.peerGroupLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Text(
+                    text = selectedGroup.label,
+                    modifier = Modifier
+                        .background(
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            shape = RoundedCornerShape(8.dp),
+                        )
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                )
+            }
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                groups.forEach { group ->
+                    FilterChip(
+                        selected = group == selectedGroup,
+                        onClick = { onGroupSelected(group) },
+                        label = {
+                            Text(
+                                text = group.label,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        },
+                    )
+                }
+            }
+
+            Text(
+                text = selectedGroup.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                comparison.rows.forEach { row ->
+                    MetricComparisonRowBlock(
+                        row = row,
+                        selectedSymbol = selectedSymbol,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MetricComparisonRowBlock(
+    row: MetricComparisonRow,
+    selectedSymbol: String,
+) {
+    val numericValues = row.values.mapNotNull { it.numericValue }
+    val bestValue = when {
+        numericValues.isEmpty() -> null
+        row.higherIsBetter -> numericValues.maxOrNull()
+        else -> numericValues.minOrNull()
+    }
+    val directionText = if (row.higherIsBetter) "높을수록 유리" else "낮을수록 유리"
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = RoundedCornerShape(8.dp),
+            )
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top,
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    text = row.metricName,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = row.helper,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Text(
+                text = directionText,
+                modifier = Modifier.padding(start = 8.dp),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.End,
+            )
+        }
+
+        row.values.forEach { value ->
+            val isSelected = value.symbol == selectedSymbol
+            val isBest = bestValue != null &&
+                value.numericValue != null &&
+                (value.numericValue - bestValue).absoluteValue < 0.0001
+            ComparisonValueBar(
+                value = value,
+                fraction = normalizedFraction(value.numericValue, numericValues),
+                isSelected = isSelected,
+                isBest = isBest,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ComparisonValueBar(
+    value: MetricComparisonValue,
+    fraction: Float,
+    isSelected: Boolean,
+    isBest: Boolean,
+) {
+    val barColor = when {
+        isSelected -> MaterialTheme.colorScheme.primary
+        isBest -> MaterialTheme.colorScheme.tertiary
+        else -> MaterialTheme.colorScheme.secondary
+    }
+    val textColor = if (isSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier = Modifier.width(88.dp),
+            verticalArrangement = Arrangement.spacedBy(1.dp),
+        ) {
+            Text(
+                text = value.symbol,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                color = textColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = value.displayName,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(18.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surface),
+        ) {
+            if (fraction > 0f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(fraction)
+                        .background(barColor.copy(alpha = if (isSelected) 0.72f else 0.42f)),
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier.widthIn(min = 78.dp),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (isBest) {
+                Text(
+                    text = "우수",
+                    modifier = Modifier.padding(end = 4.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+            Text(
+                text = value.displayValue,
+                style = MaterialTheme.typography.labelMedium,
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                textAlign = TextAlign.End,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+private fun normalizedFraction(
+    value: Double?,
+    values: List<Double>,
+): Float {
+    if (value == null || values.isEmpty()) return 0f
+    val min = values.minOrNull() ?: return 0f
+    val max = values.maxOrNull() ?: return 0f
+    if ((max - min).absoluteValue < 0.0001) return 1f
+
+    return ((value - min) / (max - min))
+        .toFloat()
+        .coerceIn(0.08f, 1f)
 }
 
 @Composable

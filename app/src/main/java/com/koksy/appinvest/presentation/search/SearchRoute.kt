@@ -13,6 +13,7 @@ fun SearchRoute() {
         factory = SearchViewModel.provideFactory(
             searchStocksUseCase = appContainer.searchStocksUseCase,
             observeStockDetailUseCase = appContainer.observeStockDetailUseCase,
+            observeMetricComparisonUseCase = appContainer.observeMetricComparisonUseCase,
         ),
     )
     val uiState = viewModel.uiState.collectAsStateWithLifecycle()
@@ -21,5 +22,6 @@ fun SearchRoute() {
         uiState = uiState.value,
         onQueryChanged = viewModel::onQueryChanged,
         onSymbolSelected = viewModel::selectSymbol,
+        onComparisonGroupSelected = viewModel::selectComparisonGroup,
     )
 }
